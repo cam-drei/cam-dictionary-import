@@ -2,6 +2,7 @@
 
 # require 'pry'
 # require 'pdf-reader'
+require 'mongo'
 
 # reader = PDF::Reader.new('TuDienMoussay.pdf')
 
@@ -36,6 +37,13 @@
 # CODE HERE
 
 sentence = 'a-hei a_ hE [Cam M] hay, hoan hç ≠ bravo.'
-puts sentence
 
 # insert sentence into mongod
+client = Mongo::Client.new([ '127.0.0.1:27017' ], :database => 'import')
+
+dictionary = client[:paragraph]
+
+data = { rumi: 'a-hei', akharThrah: 'a-hei', source: 'Cam M', vietnamese: 'hoan ho', french: 'bravo' }
+
+result = dictionary.insert_one(data)
+puts dictionary.find()

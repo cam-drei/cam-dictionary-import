@@ -6,5 +6,5 @@ ruby '2.6.3'
 gem 'pdf-reader'
 gem 'pry'
 
-gem 'mongoid'
-gem 'bson_ext'
+gem 'mongo'
+# gem 'bson_ext'
