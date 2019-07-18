@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-# require 'pry'
-# require 'pdf-reader'
+require 'pry'
+require 'pdf-reader'
 require 'mongo'
 
 # reader = PDF::Reader.new('TuDienMoussay.pdf')
@@ -36,14 +36,28 @@ require 'mongo'
 
 # CODE HERE
 
+def build_document(sentence)
+  # binding.pry
+
+  groups = sentence.split(' [Cam M] ')
+  chams = groups[0].split(' ', 2)
+  meanings = groups[1].split('=', 2)
+  {
+    rumi: chams[0],
+    akharThrah: chams[1],
+    source: 'Cam M',
+    vietnamese: meanings[0],
+    french: meanings[1]
+  }
+end
+
 sentence = 'a-hei a_ hE [Cam M] hay, hoan hç ≠ bravo.'
 
 # insert sentence into mongod
-client = Mongo::Client.new([ '127.0.0.1:27017' ], :database => 'import')
-
+client = Mongo::Client.new(['127.0.0.1:27017'], database: 'import')
 dictionary = client[:paragraph]
 
-data = { rumi: 'a-hei', akharThrah: 'a-hei', source: 'Cam M', vietnamese: 'hoan ho', french: 'bravo' }
+data = build_document(sentence)
+dictionary.insert_one(data)
 
-result = dictionary.insert_one(data)
-puts dictionary.find()
+puts dictionary.find
