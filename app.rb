@@ -22,11 +22,11 @@ class ImportPDF
     # binding.pry
     (0..paragraphs.size - 1).each do |i|
       sentence = paragraphs[i]
-      count_cham_world = count_cham_world(sentence)
+      total_cham_world = count_cham_world(sentence)
       
       
-      document = build_fulfill_one_cham_world(sentence) if count_cham_world == 2 || count_cham_world == 3
-      document = build_fulfill_two_cham_world(sentence) if count_cham_world == 4
+      document = build_fulfill_one_cham_world(sentence) if total_cham_world == 2 || total_cham_world == 3
+      document = build_fulfill_two_cham_world(sentence) if total_cham_world == 4
       document = build_french_meaning_only(sentence) if document.nil?
       document = build_error_page1(sentence) if document.nil?
 
