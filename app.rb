@@ -22,13 +22,42 @@ class ImportPDF
     # binding.pry
     (0..paragraphs.size - 1).each do |i|
       sentence = paragraphs[i]
-      total_cham_world = count_cham_world(sentence)
+      cham_word = count_cham_word(sentence)
       
-      
-      document = build_fulfill_one_cham_world(sentence) if total_cham_world == 2 || total_cham_world == 3
-      document = build_fulfill_two_cham_world(sentence) if total_cham_world == 4
-      document = build_french_meaning_only(sentence) if document.nil?
-      document = build_error_page1(sentence) if document.nil?
+      # if (cham_word == 2 || cham_word == 3) && sentence.include?(' [Cam M] ') && sentence.include?('≠')
+      #   document = build_fulfill_one_rumi_word(sentence) 
+      # elsif cham_word == 4 && sentence.include?(' [Cam M] ') && sentence.include?('≠')
+      #   document = build_fulfill_two_rumi_word(sentence)
+      # elsif (cham_word == 2 || cham_word == 3) && sentence.include?(' [Cam M]: ') && sentence.include?('≠')
+      #   document = build_fulfill_one_rumi_word_include_colon(sentence)
+      # elsif cham_word == 4 && sentence.include?(' [Cam M]: ') && sentence.include?('≠')
+      #   document = build_fulfill_two_rumi_word_include_colon(sentence)
+      # elsif (cham_word == 2 || cham_word == 3) && sentence.include?(' [Cam M] ')
+      #   document = build_french_meaning_only_one_rumi_word(sentence) 
+      # elsif (cham_word == 2 || cham_word == 3) && sentence.include?(' [Cam M]: ')
+      #   document = build_french_meaning_only_one_rumi_word_include_colon(sentence)
+      # elsif cham_word == 4 && sentence.include?(' [Cam M]: ')
+      #   document = build_french_meaning_only_two_rumi_word_include_colon(sentence)
+      # elsif sentence.include?('[Cam M')
+      #   document = build_error_page1(sentence)
+      # end
+
+    
+      if sentence.include?(' [Cam M] ') && sentence.include?('≠')
+        document = build_fulfill_sentence(sentence, cham_word)
+      elsif sentence.include?(' [Cam M]: ') && sentence.include?('≠')
+        document = build_fulfill_sentence_include_colon(sentence, cham_word)
+      elsif sentence.include?(' [Cam M] ')
+        document = build_french_meaning_only(sentence, cham_word)
+      elsif sentence.include?(' [Cam M]: ')
+        document = build_french_meaning_only_include_colon(sentence, cham_word)
+      elsif sentence.include?(' [Cam M]:')
+        document = build_fulfill_sentence_include_special_colon(sentence, cham_word)
+      elsif sentence.include?('[Cam M')
+        document = build_error_page1(sentence)
+      elsif sentence.match(/\d/) = false
+        document = build_without_meaning(sentence, cham_word)
+      end
 
       dictionary.insert_one(document) if document
 
@@ -44,8 +73,8 @@ class ImportPDF
     paragraph = ''
     @paragraphs = []
 
-    # page = reader.page(1)
-    reader.pages[0...20].each do |page|
+    page = reader.page(200)
+    # reader.pages[0...20].each do |page|
       lines = page.text.scan(/^.+/)
       lines.each do |line|
         if line.length > 55
@@ -56,25 +85,21 @@ class ImportPDF
           paragraph = ''
         end
       end
-    end
+    # end
     @paragraphs
   end
 
-  def count_cham_world(sentence)
-    if sentence.include?(' [Cam M] ')
-      groups = sentence.split(' [Cam M] ', 2)
+  def count_cham_word(sentence)
+    if sentence.include?('[Cam M]')
+      groups = sentence.split('[Cam M]', 2)
       chams = groups[0].split()
-      puts count_world = chams.count
-    elsif sentence.include?(' [Cam M')
-      groups = sentence.split(' [Cam M', 2)
-      chams = groups[0].split()
-      puts count_world = chams.count
+      count_word = chams.count
     end
-    count_world
+    count_word
   end
 
-  def build_fulfill_two_cham_world(sentence)
-    # puts 'count 4'
+# testing...
+  def build_fulfill_sentence(sentence, cham_word)
     return unless sentence.include?(' [Cam M] ') && sentence.include?('≠')
 
     groups = sentence.split(' [Cam M] ', 2)
@@ -82,47 +107,79 @@ class ImportPDF
     meanings = groups[1].split('≠', 2)
 
     {
-      rumi: chams[0, 2].join(' '),
-      akharThrah: chams[2, 2].join(' '),
+      rumi: chams[0, cham_word / 2].join(' '),
+      akharThrah: chams[cham_word / 2, cham_word / 2].join(' '),
       source: 'Cam M',
       vietnamese: meanings[0],
       french: meanings[1]
     }
   end
 
-  def build_fulfill_one_cham_world(sentence)
-    # puts 'count 2'
-    return unless sentence.include?(' [Cam M] ') && sentence.include?('≠')
+  def build_fulfill_sentence_include_colon(sentence, cham_word)
+    
+    return unless sentence.include?(' [Cam M]: ') && sentence.include?('≠')
 
-    groups = sentence.split(' [Cam M] ', 2)
-    chams = groups[0].split(' ', 2)
+    groups = sentence.split(' [Cam M]: ', 2)
+    chams = groups[0].split(' ')
     meanings = groups[1].split('≠', 2)
 
     {
-      rumi: chams[0],
-      akharThrah: chams[1],  
+      rumi: chams[0, cham_word / 2].join(' '),
+      akharThrah: chams[cham_word / 2, cham_word / 2].join(' '),
       source: 'Cam M',
-      vietnamese: meanings[0], 
+      vietnamese: meanings[0],
       french: meanings[1]
     }
   end
 
-  def build_french_meaning_only(sentence)
+  def build_french_meaning_only(sentence, cham_word)
     return unless sentence.include?(' [Cam M] ')
 
     groups = sentence.split(' [Cam M] ', 2)
-    chams = groups[0].split(' ', 2)
+    chams = groups[0].split(' ')
 
     {
-      rumi: chams[0],
-      akharThrah: chams[1],
+      rumi: chams[0, cham_word / 2].join(' '),
+      akharThrah: chams[cham_word / 2, cham_word / 2].join(' '),
       source: 'Cam M',
       vietnamese: nil,
       french: groups[1]
     }
   end
 
-  def build_error_page1(sentence) # One world is error in page 1
+  def build_french_meaning_only_include_colon(sentence, cham_word)
+    return unless sentence.include?(' [Cam M]: ')
+
+    groups = sentence.split(' [Cam M]: ', 2)
+    chams = groups[0].split(' ')
+
+    {
+      rumi: chams[0, cham_word / 2].join(' '),
+      akharThrah: chams[cham_word / 2, cham_word / 2].join(' '),
+      source: 'Cam M',
+      vietnamese: nil,
+      french: groups[1]
+    }
+  end
+
+  def build_fulfill_sentence_include_special_colon(sentence, cham_word)
+    
+    return unless sentence.include?(' [Cam M]:') && sentence.include?('≠')
+
+    groups = sentence.split(' [Cam M]:', 2)
+    chams = groups[0].split(' ')
+    meanings = groups[1].split('≠', 2)
+
+    {
+      rumi: chams[0, cham_word / 2].join(' '),
+      akharThrah: chams[cham_word / 2, cham_word / 2].join(' '),
+      source: 'Cam M',
+      vietnamese: meanings[0],
+      french: meanings[1]
+    }
+  end
+
+  def build_error_page1(sentence) # One word is error in page 1
     return unless sentence.include?('[Cam M')
 
     groups = sentence.split('[Cam M', 2)
@@ -136,6 +193,139 @@ class ImportPDF
       french: groups[1]
     }
   end
+
+def build_without_meaning(sentence, cham_word)
+  return unless sentence.match(/\d/) = false
+
+  chams = snetence.split(' ')
+
+  {
+      rumi: chams[0, cham_word / 2].join(' '),
+      akharThrah: chams[cham_word / 2, cham_word / 2].join(' '),
+      source: 'Cam M',
+      vietnamese: nil,
+      french: nil
+    }
+end  
+
+
+# finish test  
+
+  # def build_fulfill_one_rumi_word(sentence)
+    
+  #   return unless sentence.include?(' [Cam M] ') && sentence.include?('≠')
+
+  #   groups = sentence.split(' [Cam M] ', 2)
+  #   chams = groups[0].split(' ', 2)
+  #   meanings = groups[1].split('≠', 2)
+
+  #   {
+  #     rumi: chams[0],
+  #     akharThrah: chams[1],  
+  #     source: 'Cam M',
+  #     vietnamese: meanings[0], 
+  #     french: meanings[1]
+  #   }
+  # end
+
+  # def build_fulfill_two_rumi_word(sentence)
+    
+  #   return unless sentence.include?(' [Cam M] ') && sentence.include?('≠')
+
+  #   groups = sentence.split(' [Cam M] ', 2)
+  #   chams = groups[0].split(' ')
+  #   meanings = groups[1].split('≠', 2)
+
+  #   {
+  #     rumi: chams[0, 2].join(' '),
+  #     akharThrah: chams[2, 2].join(' '),
+  #     source: 'Cam M',
+  #     vietnamese: meanings[0],
+  #     french: meanings[1]
+  #   }
+  # end
+
+
+  # def build_fulfill_one_rumi_word_include_colon(sentence)
+    
+  #   return unless sentence.include?(' [Cam M]: ') && sentence.include?('≠')
+
+  #   groups = sentence.split(' [Cam M]: ', 2)
+  #   chams = groups[0].split(' ', 2)
+  #   meanings = groups[1].split('≠', 2)
+
+  #   {
+  #     rumi: chams[0],
+  #     akharThrah: chams[1],  
+  #     source: 'Cam M',
+  #     vietnamese: meanings[0], 
+  #     french: meanings[1]
+  #   }
+  # end
+
+  # def build_fulfill_two_rumi_word_include_colon(sentence)
+    
+  #   return unless sentence.include?(' [Cam M]: ') && sentence.include?('≠')
+
+  #   groups = sentence.split(' [Cam M]: ', 2)
+  #   chams = groups[0].split(' ')
+  #   meanings = groups[1].split('≠', 2)
+
+  #   {
+  #     rumi: chams[0, 2].join(' '),
+  #     akharThrah: chams[2, 2].join(' '),
+  #     source: 'Cam M',
+  #     vietnamese: meanings[0],
+  #     french: meanings[1]
+  #   }
+  # end
+
+  # def build_french_meaning_only_one_rumi_word(sentence)
+  #   return unless sentence.include?(' [Cam M] ')
+
+  #   groups = sentence.split(' [Cam M] ', 2)
+  #   chams = groups[0].split(' ', 2)
+
+  #   {
+  #     rumi: chams[0],
+  #     akharThrah: chams[1],
+  #     source: 'Cam M',
+  #     vietnamese: nil,
+  #     french: groups[1]
+  #   }
+  # end
+
+  # def build_french_meaning_only_one_rumi_word_include_colon(sentence)
+  #   return unless sentence.include?(' [Cam M]: ')
+
+  #   groups = sentence.split(' [Cam M]: ', 2)
+  #   chams = groups[0].split(' ', 2)
+
+  #   {
+  #     rumi: chams[0],
+  #     akharThrah: chams[1],
+  #     source: 'Cam M',
+  #     vietnamese: nil,
+  #     french: groups[1]
+  #   }
+  # end
+
+  # def build_french_meaning_only_two_rumi_word_include_colon(sentence)
+  #   return unless sentence.include?(' [Cam M]: ')
+
+  #   groups = sentence.split(' [Cam M]: ', 2)
+  #   chams = groups[0].split(' ')
+
+  #   {
+  #     rumi: chams[0, 2].join(' '),
+  #     akharThrah: chams[2, 2].join(' '),
+  #     source: 'Cam M',
+  #     vietnamese: nil,
+  #     french: groups[1]
+  #   }
+  # end
+
+  
 end
 
 ImportPDF.new.import
