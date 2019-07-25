@@ -12,8 +12,8 @@ class ImportPDF
     @reader = PDF::Reader.new('TuDienMoussay.pdf')
     client = Mongo::Client.new(['127.0.0.1:27017'], database: 'import')
     @dictionary = client[:dictionary]
-    
-    dictionary.delete_many() if dictionary.find()
+
+    dictionary.delete_many if dictionary.find
     File.delete(UNIMPORT_FILE_NAME) if File.exist?(UNIMPORT_FILE_NAME)
   end
 
@@ -23,9 +23,9 @@ class ImportPDF
     (0..paragraphs.size - 1).each do |i|
       sentence = paragraphs[i]
       cham_word = count_cham_word(sentence)
-      
+
       # if (cham_word == 2 || cham_word == 3) && sentence.include?(' [Cam M] ') && sentence.include?('≠')
-      #   document = build_fulfill_one_rumi_word(sentence) 
+      #   document = build_fulfill_one_rumi_word(sentence)
       # elsif cham_word == 4 && sentence.include?(' [Cam M] ') && sentence.include?('≠')
       #   document = build_fulfill_two_rumi_word(sentence)
       # elsif (cham_word == 2 || cham_word == 3) && sentence.include?(' [Cam M]: ') && sentence.include?('≠')
@@ -33,7 +33,7 @@ class ImportPDF
       # elsif cham_word == 4 && sentence.include?(' [Cam M]: ') && sentence.include?('≠')
       #   document = build_fulfill_two_rumi_word_include_colon(sentence)
       # elsif (cham_word == 2 || cham_word == 3) && sentence.include?(' [Cam M] ')
-      #   document = build_french_meaning_only_one_rumi_word(sentence) 
+      #   document = build_french_meaning_only_one_rumi_word(sentence)
       # elsif (cham_word == 2 || cham_word == 3) && sentence.include?(' [Cam M]: ')
       #   document = build_french_meaning_only_one_rumi_word_include_colon(sentence)
       # elsif cham_word == 4 && sentence.include?(' [Cam M]: ')
@@ -42,7 +42,6 @@ class ImportPDF
       #   document = build_error_page1(sentence)
       # end
 
-    
       if sentence.include?(' [Cam M] ') && sentence.include?('≠')
         document = build_fulfill_sentence(sentence, cham_word)
       elsif sentence.include?(' [Cam M]: ') && sentence.include?('≠')
@@ -55,7 +54,7 @@ class ImportPDF
         document = build_fulfill_sentence_include_special_colon(sentence, cham_word)
       elsif sentence.include?('[Cam M')
         document = build_error_page1(sentence)
-      elsif sentence.match(/\d/) = false
+      elsif !sentence.match(/\d/)
         document = build_without_meaning(sentence, cham_word)
       end
 
@@ -75,16 +74,16 @@ class ImportPDF
 
     page = reader.page(200)
     # reader.pages[0...20].each do |page|
-      lines = page.text.scan(/^.+/)
-      lines.each do |line|
-        if line.length > 55
-          paragraph += " #{line}"
-        else
-          paragraph += " #{line}"
-          @paragraphs << paragraph
-          paragraph = ''
-        end
+    lines = page.text.scan(/^.+/)
+    lines.each do |line|
+      if line.length > 55
+        paragraph += " #{line}"
+      else
+        paragraph += " #{line}"
+        @paragraphs << paragraph
+        paragraph = ''
       end
+    end
     # end
     @paragraphs
   end
@@ -92,13 +91,13 @@ class ImportPDF
   def count_cham_word(sentence)
     if sentence.include?('[Cam M]')
       groups = sentence.split('[Cam M]', 2)
-      chams = groups[0].split()
+      chams = groups[0].split
       count_word = chams.count
     end
     count_word
   end
 
-# testing...
+  # testing...
   def build_fulfill_sentence(sentence, cham_word)
     return unless sentence.include?(' [Cam M] ') && sentence.include?('≠')
 
@@ -116,7 +115,6 @@ class ImportPDF
   end
 
   def build_fulfill_sentence_include_colon(sentence, cham_word)
-    
     return unless sentence.include?(' [Cam M]: ') && sentence.include?('≠')
 
     groups = sentence.split(' [Cam M]: ', 2)
@@ -163,7 +161,6 @@ class ImportPDF
   end
 
   def build_fulfill_sentence_include_special_colon(sentence, cham_word)
-    
     return unless sentence.include?(' [Cam M]:') && sentence.include?('≠')
 
     groups = sentence.split(' [Cam M]:', 2)
@@ -194,25 +191,24 @@ class ImportPDF
     }
   end
 
-def build_without_meaning(sentence, cham_word)
-  return unless sentence.match(/\d/) = false
+  def build_without_meaning(sentence, cham_word)
+    return unless sentence.match(/\d/)
 
-  chams = snetence.split(' ')
+    chams = snetence.split(' ')
 
-  {
+    {
       rumi: chams[0, cham_word / 2].join(' '),
       akharThrah: chams[cham_word / 2, cham_word / 2].join(' '),
       source: 'Cam M',
       vietnamese: nil,
       french: nil
     }
-end  
+  end
 
-
-# finish test  
+  # finish test
 
   # def build_fulfill_one_rumi_word(sentence)
-    
+
   #   return unless sentence.include?(' [Cam M] ') && sentence.include?('≠')
 
   #   groups = sentence.split(' [Cam M] ', 2)
@@ -221,15 +217,15 @@ end
 
   #   {
   #     rumi: chams[0],
-  #     akharThrah: chams[1],  
+  #     akharThrah: chams[1],
   #     source: 'Cam M',
-  #     vietnamese: meanings[0], 
+  #     vietnamese: meanings[0],
   #     french: meanings[1]
   #   }
   # end
 
   # def build_fulfill_two_rumi_word(sentence)
-    
+
   #   return unless sentence.include?(' [Cam M] ') && sentence.include?('≠')
 
   #   groups = sentence.split(' [Cam M] ', 2)
@@ -245,9 +241,8 @@ end
   #   }
   # end
 
-
   # def build_fulfill_one_rumi_word_include_colon(sentence)
-    
+
   #   return unless sentence.include?(' [Cam M]: ') && sentence.include?('≠')
 
   #   groups = sentence.split(' [Cam M]: ', 2)
@@ -256,15 +251,15 @@ end
 
   #   {
   #     rumi: chams[0],
-  #     akharThrah: chams[1],  
+  #     akharThrah: chams[1],
   #     source: 'Cam M',
-  #     vietnamese: meanings[0], 
+  #     vietnamese: meanings[0],
   #     french: meanings[1]
   #   }
   # end
 
   # def build_fulfill_two_rumi_word_include_colon(sentence)
-    
+
   #   return unless sentence.include?(' [Cam M]: ') && sentence.include?('≠')
 
   #   groups = sentence.split(' [Cam M]: ', 2)
@@ -324,12 +319,9 @@ end
   #     french: groups[1]
   #   }
   # end
-
-  
 end
 
 ImportPDF.new.import
-
 
 # .gsub(/\s+$/m, '') remove any sequence of white spaces at the end of the string
 # .gsub(/^\s+|\s+$/m, '')  remove any sequence of white space at the beginning and at the end of the string
